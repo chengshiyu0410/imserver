@@ -30,6 +30,7 @@ jobs:
       # 4. 云端运行 Maven 构建并推送
       - name: Build Native Image and Push
         run: |
+          chmod +x mvnw
           # 这里的 -D... 是为了覆盖 pom.xml 里的配置，强制加上 Docker Hub 用户名前缀
           ./mvnw spring-boot:build-image -Dspring-boot.build-image.imageName=${{ secrets.DOCKER_USERNAME }}/imserver:latest --no-transfer-progress
           docker push ${{ secrets.DOCKER_USERNAME }}/imserver:latest
