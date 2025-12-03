@@ -2,7 +2,8 @@ name: Deploy Native Image to Server
 
 on:
   push:
-    branches: [ "master" ] # 当推送到 master 分支时触发
+    branches: [ "master" ]  # 核心修改：这里必须是 master，与你的分支名一致
+  workflow_dispatch:        # 核心修改：保留这个，让你能手动点按钮
 
 jobs:
   build-and-deploy:
@@ -26,10 +27,10 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
 
-    # 4. 云端运行 Maven 构建
+    # 4. 云端运行 Maven 构建并推送
     - name: Build Native Image and Push
       run: |
-        # 这里的 -D... 是为了覆盖 pom.xml 里的名字，加上 docker hub 用户名前缀
+        # 这里的 -D... 是为了覆盖 pom.xml 里的配置，强制加上 Docker Hub 用户名前缀
         ./mvnw spring-boot:build-image -Dspring-boot.build-image.imageName=${{ secrets.DOCKER_USERNAME }}/imserver:latest --no-transfer-progress
         docker push ${{ secrets.DOCKER_USERNAME }}/imserver:latest
 
@@ -41,10 +42,12 @@ jobs:
         username: root
         password: ${{ secrets.SERVER_PASSWORD }}
         script: |
-          # 停止旧容器
+          # 停止旧容器 (|| true 代表如果容器不存在也不报错，继续执行)
           docker stop my-app || true
           docker rm my-app || true
-          # 拉取新镜像
+
+          # 拉取刚才推送到 Docker Hub 的新镜像
           docker pull ${{ secrets.DOCKER_USERNAME }}/imserver:latest
+
           # 启动新容器
           docker run -d -p 8080:8080 --name my-app ${{ secrets.DOCKER_USERNAME }}/imserver:latest
