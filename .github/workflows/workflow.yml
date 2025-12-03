@@ -27,15 +27,35 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # 4. 云端运行 Maven 构建并推送
-      - name: Build Native Image and Push
+#      # 4. 云端运行 Maven 构建并推送
+#      - name: Build Native Image and Push
+#        run: |
+#          chmod +x mvnw
+#          ./mvnw spring-boot:build-image --no-transfer-progress
+#          docker tag imserver:latest ${{ secrets.DOCKER_USERNAME }}/imserver:latest
+#          docker push ${{ secrets.DOCKER_USERNAME }}/imserver:latest
+      # 4. 构建并导出为文件 (不推送到 Docker Hub 了，直接打包)
+      - name: Build and Export
         run: |
           chmod +x mvnw
+          # 1. 构建镜像
           ./mvnw spring-boot:build-image --no-transfer-progress
-          docker tag imserver:latest ${{ secrets.DOCKER_USERNAME }}/imserver:latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/imserver:latest
 
-      # 5. 远程连接你的服务器，更新运行
+          # 2. 改名
+          docker tag imserver:latest chengshiyu1/imserver:latest
+
+          # 3. 核心步骤：保存为 tar 文件
+          docker save -o imserver.tar chengshiyu1/imserver:latest   
+      # 5. 把文件直接传给服务器 (SCP 模式)
+      - name: Copy file to Server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: root
+          password: ${{ secrets.SERVER_PASSWORD }}
+          source: "imserver.tar"
+          target: "/root"
+      # 6. 服务器解压并启动
       - name: Deploy to Server
         uses: appleboy/ssh-action@master
         with:
@@ -43,12 +63,14 @@ jobs:
           username: root
           password: ${{ secrets.SERVER_PASSWORD }}
           script: |
-            # 停止旧容器 (|| true 代表如果容器不存在也不报错，继续执行)
+            # 1. 停止旧容器
             docker stop imserver || true
             docker rm imserver || true
             
-            # 拉取刚才推送到 Docker Hub 的新镜像
-            docker pull ${{ secrets.DOCKER_USERNAME }}/imserver:latest
+            # 2. 核心步骤：加载刚才传过来的文件
+            docker load -i /root/imserver.tar
             
             # 启动新容器
             docker run -d -p 8080:8080 --name imserver -v /root/project/logs/imserver:/workspace/logs ${{ secrets.DOCKER_USERNAME }}/imserver:latest
+            
+            rm -f /root/imserver.tar
