@@ -31,8 +31,8 @@ jobs:
       - name: Build Native Image and Push
         run: |
           chmod +x mvnw
-          # 这里的 -D... 是为了覆盖 pom.xml 里的配置，强制加上 Docker Hub 用户名前缀
-          ./mvnw spring-boot:build-image -Dspring-boot.build-image.imageName=${{ secrets.DOCKER_USERNAME }}/imserver:latest --no-transfer-progress
+          ./mvnw spring-boot:build-image --no-transfer-progress
+          docker tag imserver:latest ${{ secrets.DOCKER_USERNAME }}/imserver:latest
           docker push ${{ secrets.DOCKER_USERNAME }}/imserver:latest
 
       # 5. 远程连接你的服务器，更新运行
@@ -51,4 +51,4 @@ jobs:
             docker pull ${{ secrets.DOCKER_USERNAME }}/imserver:latest
             
             # 启动新容器
-            docker run -d -p 8080:8080 --name my-app ${{ secrets.DOCKER_USERNAME }}/imserver:latest
+            docker run -d -p 8080:8080 --name my-app -v /root/project/logs/imserver:/workspace/logs ${{ secrets.DOCKER_USERNAME }}/imserver:latest
