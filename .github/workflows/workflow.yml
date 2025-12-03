@@ -44,11 +44,11 @@ jobs:
           password: ${{ secrets.SERVER_PASSWORD }}
           script: |
             # 停止旧容器 (|| true 代表如果容器不存在也不报错，继续执行)
-            docker stop my-app || true
-            docker rm my-app || true
+            docker stop imserver || true
+            docker rm imserver || true
             
             # 拉取刚才推送到 Docker Hub 的新镜像
             docker pull ${{ secrets.DOCKER_USERNAME }}/imserver:latest
             
             # 启动新容器
-            docker run -d -p 8080:8080 --name my-app -v /root/project/logs/imserver:/workspace/logs ${{ secrets.DOCKER_USERNAME }}/imserver:latest
+            docker run -d -p 8080:8080 --name imserver -v /root/project/logs/imserver:/workspace/logs ${{ secrets.DOCKER_USERNAME }}/imserver:latest
