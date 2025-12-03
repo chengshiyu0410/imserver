@@ -1,0 +1,50 @@
+name: Deploy Native Image to Server
+
+on:
+  push:
+    branches: [ "master" ] # 当推送到 master 分支时触发
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    # 1. 拉取代码
+    - uses: actions/checkout@v3
+
+    # 2. 设置 JDK 17 和 GraalVM 环境
+    - uses: graalvm/setup-graalvm@v1
+      with:
+        java-version: '17'
+        distribution: 'graalvm'
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        native-image-job-reports: 'true'
+
+    # 3. 登录 Docker Hub
+    - name: Login to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    # 4. 云端运行 Maven 构建
+    - name: Build Native Image and Push
+      run: |
+        # 这里的 -D... 是为了覆盖 pom.xml 里的名字，加上 docker hub 用户名前缀
+        ./mvnw spring-boot:build-image -Dspring-boot.build-image.imageName=${{ secrets.DOCKER_USERNAME }}/imserver:latest --no-transfer-progress
+        docker push ${{ secrets.DOCKER_USERNAME }}/imserver:latest
+
+    # 5. 远程连接你的服务器，更新运行
+    - name: Deploy to Server
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SERVER_IP }}
+        username: root
+        password: ${{ secrets.SERVER_PASSWORD }}
+        script: |
+          # 停止旧容器
+          docker stop my-app || true
+          docker rm my-app || true
+          # 拉取新镜像
+          docker pull ${{ secrets.DOCKER_USERNAME }}/imserver:latest
+          # 启动新容器
+          docker run -d -p 8080:8080 --name my-app ${{ secrets.DOCKER_USERNAME }}/imserver:latest
