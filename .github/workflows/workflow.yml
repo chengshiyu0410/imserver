@@ -2,8 +2,8 @@ name: Deploy Native Image to Server
 
 on:
   push:
-    branches: [ "master" ]  # 核心修改：这里必须是 master，与你的分支名一致
-  workflow_dispatch:        # 核心修改：保留这个，让你能手动点按钮
+    branches: [ "master" ]
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
@@ -20,32 +20,28 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           native-image-job-reports: 'true'
 
-      # 3. 登录 Docker Hub
+      # 3. 登录 Docker Hub (虽然不用推流，但登录一下是个好习惯)
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-#      # 4. 云端运行 Maven 构建并推送
-#      - name: Build Native Image and Push
-#        run: |
-#          chmod +x mvnw
-#          ./mvnw spring-boot:build-image --no-transfer-progress
-#          docker tag imserver:latest ${{ secrets.DOCKER_USERNAME }}/imserver:latest
-#          docker push ${{ secrets.DOCKER_USERNAME }}/imserver:latest
-      # 4. 构建并导出为文件 (不推送到 Docker Hub 了，直接打包)
+      # 4. 构建并导出为文件 (最简版：完全信任 pom.xml)
       - name: Build and Export
         run: |
           chmod +x mvnw
+          
           # 1. 构建镜像
-          ./mvnw spring-boot:build-image -Dspring-boot.build-image.env.BP_NATIVE_IMAGE=true --no-transfer-progress
+          # 注意：这里不加任何参数，它会自动读取 pom.xml 里的 <BP_NATIVE_IMAGE>true</BP_NATIVE_IMAGE>
+          ./mvnw spring-boot:build-image --no-transfer-progress
 
-          # 2. 改名
+          # 2. 改名 (对应 pom.xml 里的 <name>imserver:latest</name>)
           docker tag imserver:latest chengshiyu1/imserver:latest
 
-          # 3. 核心步骤：保存为 tar 文件
+          # 3. 保存为 tar 文件
           docker save -o imserver.tar chengshiyu1/imserver:latest
+
       # 5. 把文件直接传给服务器 (SCP 模式)
       - name: Copy file to Server
         uses: appleboy/scp-action@master
@@ -55,6 +51,7 @@ jobs:
           password: ${{ secrets.SERVER_PASSWORD }}
           source: "imserver.tar"
           target: "/root"
+
       # 6. 服务器解压并启动
       - name: Deploy to Server
         uses: appleboy/ssh-action@master
@@ -63,14 +60,16 @@ jobs:
           username: root
           password: ${{ secrets.SERVER_PASSWORD }}
           script: |
-            # 1. 停止旧容器
+            # 1. 停止并删除旧容器
             docker stop imserver || true
             docker rm imserver || true
             
-            # 2. 核心步骤：加载刚才传过来的文件
+            # 2. 加载新镜像
             docker load -i /root/imserver.tar
             
-            # 启动新容器
-            docker run -d -p 8080:8080 --name imserver -v /root/project/logs/imserver:/workspace/logs ${{ secrets.DOCKER_USERNAME }}/imserver:latest
+            # 3. 启动容器
+            # 注意：去掉了日志挂载，先用 docker logs 看，避免权限问题
+            docker run -d -p 8080:8080 --name imserver chengshiyu1/imserver:latest
             
+            # 4. 清理垃圾
             rm -f /root/imserver.tar
