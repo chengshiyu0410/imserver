@@ -12,7 +12,7 @@ jobs:
       # 1. 拉取代码
       - uses: actions/checkout@v3
 
-      # 2. 设置 JDK 17 和 GraalVM 环境
+      # 2. 设置 JDK 21 和 GraalVM 环境
       - uses: graalvm/setup-graalvm@v1
         with:
           java-version: '21'
@@ -39,7 +39,7 @@ jobs:
         run: |
           chmod +x mvnw
           # 1. 构建镜像
-          ./mvnw spring-boot:build-image --no-transfer-progress
+          ./mvnw spring-boot:build-image -Dspring-boot.build-image.env.BP_NATIVE_IMAGE=true --no-transfer-progress
 
           # 2. 改名
           docker tag imserver:latest chengshiyu1/imserver:latest
