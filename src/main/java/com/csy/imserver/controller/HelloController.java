@@ -9,7 +9,7 @@ public class HelloController {
     @GetMapping("/")
     public String index() {
         System.out.println(Thread.currentThread().toString());
-        return "你好！我是原生编译的 Java 程序。运行在: " + System.getProperty("os.name");
+        return "你好！我是原生编译的 Java 程序。c运行在: " + System.getProperty("os.name");
     }
 
 
