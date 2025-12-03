@@ -45,7 +45,7 @@ jobs:
           docker tag imserver:latest chengshiyu1/imserver:latest
 
           # 3. 核心步骤：保存为 tar 文件
-          docker save -o imserver.tar chengshiyu1/imserver:latest   
+          docker save -o imserver.tar chengshiyu1/imserver:latest
       # 5. 把文件直接传给服务器 (SCP 模式)
       - name: Copy file to Server
         uses: appleboy/scp-action@master
