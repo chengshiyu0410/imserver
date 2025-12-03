@@ -15,7 +15,7 @@ jobs:
       # 2. 设置 JDK 17 和 GraalVM 环境
       - uses: graalvm/setup-graalvm@v1
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'graalvm'
           github-token: ${{ secrets.GITHUB_TOKEN }}
           native-image-job-reports: 'true'
