@@ -18,7 +18,9 @@ public class HelloController {
     public User t1() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
         // 使用反射创建对象，并赋值 返回
         try {
-            Class<?> clazz = Class.forName("com.csy.imserver.entity.User");
+            String packageName = "com.csy.imserver.entity";
+            String className = "User";
+            Class<?> clazz = Class.forName(packageName + "." + className);
             User user = (User) clazz.newInstance();
             user.setName("张三");
             user.setPassword("<PASSWORD>");
