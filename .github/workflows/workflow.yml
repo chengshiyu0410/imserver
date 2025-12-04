@@ -72,4 +72,4 @@ jobs:
             docker run -d -p 8080:8080 --name imserver chengshiyu1/imserver:latest
             
             # 4. 清理垃圾
-            rm -f /root/imserver.tar
+#            rm -f /root/imserver.tar
