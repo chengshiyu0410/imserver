@@ -47,7 +47,7 @@ jobs:
           password: ${{ secrets.SERVER_PASSWORD }}
           source: "imserver.tar"
           target: "/root"
-
+      # docker run -d -p 8081:8080 --name imserver -v /root/project/logs/imserver:/logs  -e LOGGING_FILE_PATH=/logs chengshiyu1/imserver:latest
       # 6. 部署
       - name: Deploy to Server
         uses: appleboy/ssh-action@master
@@ -59,5 +59,4 @@ jobs:
             docker stop imserver || true
             docker rm imserver || true
             docker load -i /root/imserver.tar
-#            docker run -d -p 8081:8080 --name imserver -v /root/project/logs/imserver:/logs  -e LOGGING_FILE_PATH=/logs chengshiyu1/imserver:latest
             rm -f /root/imserver.tar
