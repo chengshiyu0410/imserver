@@ -15,7 +15,7 @@ public class HelloController {
 
 
     @GetMapping("/t1")
-    public String t1() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
+    public String t1() {
         try {
             String packageName = "com.csy.imserver.entity";
             String className = "User";
