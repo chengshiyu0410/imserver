@@ -15,8 +15,7 @@ public class HelloController {
 
 
     @GetMapping("/t1")
-    public User t1() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
-        // 使用反射创建对象，并赋值 返回
+    public String t1() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
         try {
             String packageName = "com.csy.imserver.entity";
             String className = "User";
@@ -29,7 +28,7 @@ public class HelloController {
             user.setAvatar("https://avatars.githubusercontent.com/u/10251060?s=200&v=4");
             user.setSex("男");
             user.setBirthday("1990-01-01");
-            return user;
+            return user.toString();
         } catch (Exception e) {
             System.out.println("反射失败：" + e.getMessage());
             return null;
